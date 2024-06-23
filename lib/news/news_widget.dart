@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:news_app/MyTheme.dart';
 import 'package:news_app/model/sourseResponse.dart';
+import 'package:news_app/news/cubit/newsState.dart';
+import 'package:news_app/news/news_item.dart';
+import 'package:news_app/news/news_widget_view_model.dart';
+import 'package:provider/provider.dart';
 
-import '../api/api_maneger.dart';
-import '../model/NewsRespose.dart';
 
 class NewsWidget extends StatefulWidget {
   Source source;
@@ -14,59 +17,46 @@ class NewsWidget extends StatefulWidget {
 }
 
 class _NewsWidgetState extends State<NewsWidget> {
+
+  NewsWidgetViewModel viewModel = NewsWidgetViewModel();
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    viewModel.getNewsByCategoryId(widget.source.id?? '');
+  }
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<NewsRespose?>(
-        future: ApiManager.getNewsBySourceId(widget.source.id??''),
-        builder: (context, snapshot) {
-          if(snapshot.connectionState == ConnectionState.waiting){
-            return Center(
-              child: CircularProgressIndicator(
-                color: MyTheme.primaryLightColor,
-              ),
-            );
-          }else if(snapshot.hasError){
-            return Center(
-              child: Column(
-                children: [
-                  Text("Something went error"),
-                  ElevatedButton(onPressed: (){
-                    ApiManager.getNewsBySourceId(widget.source.id??'');
-                        setState(() {
-
-                        });
-                  }
-                      , child: Text("Try again")
-                  )
-                ],
-              ),
-            );
-            // server (success,error)
-          } if(snapshot.data?.status !='ok'){
-            Center(
-              child: Column(
-                children: [
-                  Text(snapshot.data!.message!),
-                  ElevatedButton(onPressed: (){
-                    ApiManager.getNewsBySourceId(widget.source.id ?? '');
-                    setState(() {
-
-                    });
-                  }
-                      , child: Text("Try again")
-                  )
-                ],
-              ),
-            );
-          }
-          var newsList = snapshot.data?.articles?? [];
-          return ListView.builder(
-            itemCount: newsList.length,
-            itemBuilder: (context, index) {
-            return Text(newsList[index].title?? '');
-          },
+    return BlocBuilder<NewsWidgetViewModel,NewsStates>(
+      bloc: viewModel,
+      builder: (context, state) {
+        if(state is NewsLoadingState){
+          return Center(
+            child: CircularProgressIndicator(
+              color: MyTheme.primaryLightColor,
+            ),
           );
-        },
+        }else if(state is NewsErrorState){
+          return Column(
+            children: [
+              Text(state.errorMessage!),
+              ElevatedButton(onPressed: (){
+                viewModel.getNewsByCategoryId(widget.source.id?? " ");
+                setState(() {
+
+                });
+              }, child: Text("Try Again"))
+            ],
+          );
+        }else if(state is NewsSuccessState){
+          return ListView.builder(
+            itemCount: state.newsList.length,
+            itemBuilder: (context, index) {
+              return NewsItem(news: state.newsList[index]);
+            },
+          );
+        }else return Container();
+      },
     );
   }
 }
