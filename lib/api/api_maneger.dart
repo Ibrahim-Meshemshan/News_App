@@ -7,14 +7,15 @@ import 'package:news_app/model/sourseResponse.dart';
 
 class ApiManager{
 
-  static Future<SourseResponse?> getSource()async{
+  static Future<SourseResponse?> getSource(String categoryId)async{
     /// adb949e7be28414a8b0eb647e4696f0a {api_key}
     /// https://newsapi.org/v2/top-headlines/sources?apiKey=adb949e7be28414a8b0eb647e4696f0a
     Uri url = Uri.https(
       ApiConstants.baseurl, /* server name*/
       ApiConstants.sourcesApi, /* complete url */
       {
-        'apiKey': 'adb949e7be28414a8b0eb647e4696f0a'
+        'apiKey': 'adb949e7be28414a8b0eb647e4696f0a',
+        'category': categoryId
       }
     );
     try{
